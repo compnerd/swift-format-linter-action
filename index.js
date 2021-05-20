@@ -45,15 +45,15 @@ async function format(file) {
     const lint = spawn("swift", ["format", "lint", file]);
     lint.stderr.on('data', (data) => {
       data.toString()
-	  .split('\n')
-	  .forEach(issue => {
-	    const ISSUE_REGEX = /^(.*):([0-9]+):([0-9]+): (warning|error): (.*)$/g;
-	    for (let report of issue.matchAll(ISSUE_REGEX)) {
-	      const [_, path, line, column, level, message, index, input, groups] = report;
-	      console.log(`::${level.trim()} file=${path.trim()},line=${line.trim()},col=${column.trim()}::${message.trim()}`);
-	      issues += 1;
-	    }
-	  });
+          .split('\n')
+          .forEach(issue => {
+            const ISSUE_REGEX = /^(.*):([0-9]+):([0-9]+): (warning|error): (.*)$/g;
+            for (let report of issue.matchAll(ISSUE_REGEX)) {
+              const [_, path, line, column, level, message, index, input, groups] = report;
+              console.log(`::${level.trim()} file=${path.trim()},line=${line.trim()},col=${column.trim()}::${message.trim()}`);
+              issues += 1;
+            }
+          });
     });
     // Unfortunately, `swift-format` does not provide an exit code to indicate
     // if there were issues detected or not.  We instead count the number of
@@ -61,9 +61,9 @@ async function format(file) {
     // should be fulfilled or cancelled.
     lint.on('exit', (code) => {
       if (issues === 0) {
-	resolve();
+        resolve();
       } else {
-	reject(`${issues} issues detected in ${file}`);
+        reject(`${issues} issues detected in ${file}`);
       }
     });
   });
