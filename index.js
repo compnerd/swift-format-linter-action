@@ -16,7 +16,10 @@ const getPullRequestChangedFiles = async (octokit) => {
     pull_number: getPullRequestNumber(),
   });
 
-  let filesChanged = data.map((v) => v.filename);
+  // We cannot lint any files which have been deleted in this PR.
+  let filesChanged =
+      data.filter(item => item.status !== "deleted")
+          .map((v) => v.filename);
   const fileTypeJsonString = core.getInput('exclude-types');
   const pathJsonString = core.getInput('excludes');
 
