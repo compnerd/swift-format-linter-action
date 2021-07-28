@@ -57,7 +57,7 @@ jobs:
           fi
 
       - name: Lint
-        uses: Iron-Ham/swift-format-linter-action@v5
+        uses: compnerd/swift-format-linter-action@main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # Optional parameters. Note that these are formatted as JSON array strings
