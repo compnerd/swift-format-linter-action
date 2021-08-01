@@ -1,48 +1,13 @@
+// Copyright (c) 2020 Hesham Salman
+// Copyright (c) 2021 Saleem Abdulrasool <compnerd@compnerd.org>
+// SPDX-License-Identifier: MIT
+
 const core = require('@actions/core');
 const github = require('@actions/github');
 
-const getPullRequestNumber = () => {
-  const fs = require('fs');
-  const ev = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf-8'));
-  return ev.number;
-}
-
-const getPullRequestChangedFiles = async (octokit) => {
-  const nwo = process.env['GITHUB_REPOSITORY'] || '/';
-  const [owner, repo] = nwo.split('/');
-  const { data } = await octokit.pulls.listFiles({
-    owner: owner,
-    repo: repo,
-    pull_number: getPullRequestNumber(),
-  });
-
-  // We cannot lint any files which have been deleted in this PR.
-  let filesChanged =
-      data.filter(item => item.status !== "deleted")
-          .map((v) => v.filename);
-  const fileTypeJsonString = core.getInput('exclude-types');
-  const pathJsonString = core.getInput('excludes');
-
-  const fileTypesToExclude = !fileTypeJsonString || fileTypeJsonString.trim() == '' ? null : JSON.parse(fileTypeJsonString);
-  const filePathsToExclude = !pathJsonString || pathJsonString.trim() == '' ? null : JSON.parse(pathJsonString);
-
-  if (fileTypesToExclude != null && fileTypesToExclude.length != 0) {
-    fileTypesToExclude.forEach(type =>
-      filesChanged = filesChanged.filter(file => !file.endsWith(type))
-    );
-  }
-
-  if (filePathsToExclude != null && filePathsToExclude.length != 0) {
-    filePathsToExclude.forEach(path =>
-      filesChanged = filesChanged.filter(file => !file.startsWith(path))
-    );
-  }
-
-  return filesChanged.filter(file => file.endsWith('.swift'));
-};
-
 async function format(file) {
   const { spawn } = require('child_process');
+
   return new Promise(function (resolve, reject) {
     var issues = 0;
     const lint = spawn("swift", ["format", "lint", file]);
@@ -72,21 +37,49 @@ async function format(file) {
   });
 }
 
-async function runSwiftFormat(octokit) {
-  const filesChanged = await getPullRequestChangedFiles(octokit);
-  if (filesChanged.length == 0) return [Promise.resolve()];
-  return filesChanged.map(file => format(file));
+async function changed() {
+  const token = core.getInput('github-token');
+  const octokit = github.getOctokit(token);
+
+  const { data } = await octokit.rest.pulls.listFiles({
+    owner: github.context.repo.owner,
+    repo: github.context.repo.repo,
+    pull_number: github.context.payload.pull_request.number,
+  });
+
+  // We cannot lint any files which have been deleted in this pull request.
+  //
+  // Early filter just the swift items, we know that we cannot process the
+  // other files, so lets reduce the items being scanned in the filters.
+  let files = data.filter(item => item.status !== 'deleted')
+                  .map(item => item.filename)
+                  .filter(file => file.endsWith('.swift'));
+
+  JSON.parse((core.getInput('excluded-types') || '[]').trim()).forEach(ext => {
+    files = files.filter(file => !file.endsWith(ext));
+  });
+
+  JSON.parse((core.getInput('excludes') || '[]').trim()).forEach(path => {
+    files = files.filter(file => !file.startsWith(path));
+  });
+
+  return files;
+}
+
+async function lint() {
+  const files = await changed();
+  if (files.length == 0)
+    return [Promise.resolve()];
+  return files.map(file => format(file));
 }
 
 async function main() {
-  const token = core.getInput('github-token') || process.env.GITHUB_TOKEN;
-  const octokit = new github.GitHub(token);
-  Promise.all(await runSwiftFormat(octokit)).then(() => {
+  Promise.all(await lint()).then(() => {
     console.log('done');
   }).catch((err) => {
     console.log(err);
     core.setFailed('swift-format failed check');
-  })
+  });
 }
 
 main()

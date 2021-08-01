@@ -1,0 +1,21 @@
+{
+  "name": "swift-format-linter-action",
+  "version": "1.0.0",
+  "description": "swift-format linter for GitHub Actions",
+  "main": "index.js",
+  "dependencies": {
+    "@actions/core": "^1.4.0",
+    "@actions/github": "^5.0.0"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/compnerd/swift-format-linter-action.git"
+  },
+  "author": "Saleem Abdulrasool <compnerd@compnerd.org>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/compnerd/swift-format-linter-action/issues"
+  },
+  "homepage": "https://github.com/compnerd/swift-format-linter-action"
+}
