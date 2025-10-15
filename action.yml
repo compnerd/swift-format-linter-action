@@ -11,5 +11,5 @@ inputs:
     description: "List of types to exclude"
     required: false
 runs:
-  using: 'node12'
+  using: 'node20'
   main: 'index.js'

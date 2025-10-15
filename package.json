@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/compnerd/swift-format-linter-action/issues"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "homepage": "https://github.com/compnerd/swift-format-linter-action"
 }
